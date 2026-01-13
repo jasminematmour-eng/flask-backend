@@ -21,15 +21,13 @@ jobs:
       - name: Run Bandit (SAST)
         run: |
           pip install bandit
-          # -lll : filtre pour ne montrer que High (Sévérité élevée)
-          # --exit-zero : ne pas faire échouer la pipeline pour des alertes mineures
-          bandit -r . -lll
+          
+          bandit -r . --severity-level medium
       # 2. Scan des dépendances avec Safety
       - name: Dependency Check (Safety)
         run: |
           pip install safety
-          # Scanne le fichier requirements.txt
-          safety check -r requirements.txt
+          safety scan --file requirements.txt
 
       # 3. Scan de l'image Docker avec Trivy
       - name: Build Docker Image
