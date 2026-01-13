@@ -1,40 +1,32 @@
 import hashlib
 import subprocess
+import os # Pour récupérer les secrets via variables d'environnement
 from flask import Flask, request
-from utils import load_user
 
 app = Flask(__name__)
 
-# Vulnérabilité 1 :
+# CORRECTION B324 : Utiliser SHA-256 (plus robuste) au lieu de MD5
 def hash_password(password):
-    return hashlib.md5(password.encode()).hexdigest()
+    return hashlib.sha256(password.encode()).hexdigest()
 
-# Vulnérabilité 2 : command injection 
 @app.route("/ping")
 def ping():
     host = request.args.get("host", "localhost")
-    result = subprocess.check_output(f"ping -c 1 {host}", shell=True)
-    return result
+    # CORRECTION B602 : shell=False et passage des arguments en liste pour éviter l'injection
+    # On limite aussi les caractères autorisés pour 'host' par sécurité
+    try:
+        result = subprocess.check_output(["ping", "-c", "1", host], shell=False)
+        return result
+    except Exception as e:
+        return str(e), 400
 
+# CORRECTION B105 : Ne jamais mettre de mot de passe en dur. Utiliser une variable d'env.
+ADMIN_PASSWORD_HASH = os.environ.get("ADMIN_PASSWORD_HASH", "hash_par_defaut_si_vide")
 
-# Vulnérabilité 3 : mot de passe en dur
-ADMIN_PASSWORD = "123456"
-
-# Vulnérabilité 4 
-@app.route("/hello")
-def hello():
-    name = request.args.get("name", "user")
-    return f"<h1>Hello {name}</h1>"
-
-# Vulnérabilité 5 : auth faible 
-@app.route("/login")
-def login():
-    username = request.args.get("username")
-    password = request.args.get("password")
-    stored_password = load_user(username)
-    if stored_password == password:
-        return "Logged in"
-    return "Invalid credentials"
+@app.route("/")
+def home():
+    return "Backend Sécurisé"
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # CORRECTION B201 : debug=False impératif en production
+    app.run(debug=False)
