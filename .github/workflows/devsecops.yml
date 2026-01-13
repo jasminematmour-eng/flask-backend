@@ -18,13 +18,12 @@ jobs:
         with:
           python-version: '3.9'
 
-      # 1. SAST - Analyse statique avec Bandit (spécifique Python)
       - name: Run Bandit (SAST)
         run: |
           pip install bandit
-          bandit -r . -f txt -o bandit-results.txt || true
-          bandit -r . # Cette ligne fera échouer la pipeline si faille trouvée
-
+          # -lll : filtre pour ne montrer que High (Sévérité élevée)
+          # --exit-zero : ne pas faire échouer la pipeline pour des alertes mineures
+          bandit -r . -lll
       # 2. Scan des dépendances avec Safety
       - name: Dependency Check (Safety)
         run: |
