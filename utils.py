@@ -1,0 +1,5 @@
+# utils.py
+def load_user(username):
+# Simulation d'un stockage utilisateur non sécurisé (ex: basefictive)
+    fake_db = {"admin": "admin123", "user": "pass"}
+    return fake_db.get(username)

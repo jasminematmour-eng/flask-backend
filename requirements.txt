@@ -1,0 +1,6 @@
+#flask
+Flask==2.3.3
+bcrypt==4.0.1       # pour remplacer MD5
+requests==2.31.0
+bandit==1.7.5       # outil SAST pour Python
+safety==2.4.0       # scan des dépendances
