@@ -2,47 +2,44 @@ name: DevSecOps Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ main, master ]
 
 jobs:
-  build-and-secure:
+  security_scans:
     runs-on: ubuntu-latest
     steps:
-    # 1️⃣ Checkout code
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    # 2️⃣ Setup Python
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.11
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
 
-    # 3️⃣ Install dependencies
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      # 1. SAST - Analyse statique avec Bandit (spécifique Python)
+      - name: Run Bandit (SAST)
+        run: |
+          pip install bandit
+          bandit -r . -f txt -o bandit-results.txt || true
+          bandit -r . # Cette ligne fera échouer la pipeline si faille trouvée
 
-    # 4️⃣ SAST Python avec Bandit
-    - name: Python SAST scan
-      run: |
-        bandit -r . -ll -iii
+      # 2. Scan des dépendances avec Safety
+      - name: Dependency Check (Safety)
+        run: |
+          pip install safety
+          # Scanne le fichier requirements.txt
+          safety check -r requirements.txt
 
-    # 5️⃣ Scan des dépendances avec Safety
-    - name: Dependency Security Check
-      run: |
-        safety check -r requirements.txt
+      # 3. Scan de l'image Docker avec Trivy
+      - name: Build Docker Image
+        run: docker build -t flask-app:latest .
 
-    # 6️⃣ Build Docker image
-    - name: Build Docker image
-      run: |
-        docker build -t flask-backend:latest .
-
-    # 7️⃣ Scan Docker image (avec Trivy)
-    - name: Scan Docker image
-      uses: aquasecurity/trivy-action@v0.11.0
-      with:
-        image-ref: flask-backend:latest
+      - name: Docker Image Scan (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'flask-app:latest'
+          format: 'table'
+          exit-code: '1' # Fait échouer la pipeline si des failles sont trouvées
+          severity: 'CRITICAL,HIGH'
