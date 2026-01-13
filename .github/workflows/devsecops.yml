@@ -23,13 +23,14 @@ jobs:
           pip install bandit
           
           bandit -r . --severity-level medium
-      # 2. Scan des dépendances avec Safety
+          
+
+      # 2. Scan des dépendances avec Safety (Version stable pour CI)
       - name: Dependency Check (Safety)
         run: |
-          pip install safety
-          safety scan --file requirements.txt
-
-      # 3. Scan de l'image Docker avec Trivy
+          pip install safety==2.3.5
+          safety check -r requirements.txt
+          
       - name: Build Docker Image
         run: docker build -t flask-app:latest .
 
@@ -38,5 +39,5 @@ jobs:
         with:
           image-ref: 'flask-app:latest'
           format: 'table'
-          exit-code: '1' # Fait échouer la pipeline si des failles sont trouvées
+          exit-code: '1' 
           severity: 'CRITICAL,HIGH'
